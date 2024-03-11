@@ -50,6 +50,7 @@
             android:id="@+id/cardUsuario"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
             android:elevation="10dp"
             app:cardCornerRadius="15dp"
             android:backgroundTint="#FAFAFA"
@@ -60,7 +61,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="22dp"
-                    android:layout_marginBottom="10dp"
                     android:textSize="16sp"
                     android:textColor="@color/black"
                     android:text="Mi Perfil" />

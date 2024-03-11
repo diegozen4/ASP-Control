@@ -3,17 +3,15 @@
 package com.asp.loginhome.secciones.jornada
 
 import android.Manifest
-import android.content.IntentSender
-import android.location.LocationManager
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationSettingsRequest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
@@ -26,11 +24,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
-import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.StringRequest
@@ -38,7 +33,9 @@ import com.android.volley.toolbox.Volley
 import com.asp.loginhome.R
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
 import kotlinx.coroutines.*
 import java.net.URLEncoder
 import java.text.SimpleDateFormat
@@ -1346,8 +1343,3 @@ class JornadaFragment: Fragment(R.layout.fragment_jornada) {
     }
 
 }
-
-
-
-
-

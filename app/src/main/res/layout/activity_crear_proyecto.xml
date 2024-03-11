@@ -61,26 +61,26 @@
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp" />
 
-    <DatePicker
-        android:id="@+id/datePickerFechaEntrega"
+    <TextView
+        android:id="@+id/textViewFechaEntrega"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:calendarViewShown="false"
-        android:calendarTextColor="@color/black"
-        android:datePickerMode="spinner"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@+id/editTextDescripcion"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="10dp"
+        android:gravity="center_horizontal"
+        android:hint="Fecha Nacimiento (Click para seleccionar Fecha)"
+        android:minHeight="48dp"
+        android:paddingVertical="10dp"
+        android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextDescripcion"  />
 
-    <MultiAutoCompleteTextView
-        android:id="@+id/multiAutoCompleteTextViewSupervisor"
+    <AutoCompleteTextView
+        android:id="@+id/AutoCompleteTextViewSupervisor"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="Escoger Supervisor"
-        app:layout_constraintTop_toBottomOf="@+id/datePickerFechaEntrega"
+        app:layout_constraintTop_toBottomOf="@+id/textViewFechaEntrega"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:textColor="@color/black"
@@ -93,7 +93,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="Escoger Equipo"
-        app:layout_constraintTop_toBottomOf="@+id/multiAutoCompleteTextViewSupervisor"
+        app:layout_constraintTop_toBottomOf="@+id/AutoCompleteTextViewSupervisor"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:textColor="@color/black"

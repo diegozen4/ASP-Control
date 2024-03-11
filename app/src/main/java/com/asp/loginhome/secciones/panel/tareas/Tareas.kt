@@ -46,22 +46,25 @@ class Tareas : AppCompatActivity() {
             startActivity(intent)
         }
 
-        val idProyecto = intent.getStringExtra("idProyecto")
+        val idUsuario = intent.getStringExtra("idUsuario")
 
-        obtenerTareasDesdeServidor(idProyecto.toString())
+        obtenerTareasDesdeServidor(idUsuario.toString())
 
         tareasAdapter.setOnItemClickListener(object : TareasAdapter.OnItemClickListener {
             override fun onItemClick(tarea: Tarea) {
-       /*         val intent = Intent(this@Tareas, DetalleTarea::class.java)
+                val intent = Intent(this@Tareas, DetalleTarea::class.java)
                 intent.putExtra("idTarea", tarea.id)
+                intent.putExtra("nombreTarea", tarea.nombre)
+                intent.putExtra("descripcion", tarea.descripcion)
+                intent.putExtra("fechaEntrega", tarea.fecha)
                 startActivity(intent)
-*/
+
             }
         })
     }
 
-    private fun obtenerTareasDesdeServidor(idProyecto:String) {
-        val url = "${BaseApi.BaseURL}obtenerTareas.php?idProyecto=$idProyecto"
+    private fun obtenerTareasDesdeServidor(idUsuario:String) {
+        val url = "${BaseApi.BaseURL}obtenerTareas.php?idUsuario=$idUsuario"
 
         val requestQueue: RequestQueue = Volley.newRequestQueue(this)
         val jsonArrayRequest = JsonArrayRequest(

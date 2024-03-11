@@ -6,13 +6,13 @@
     import android.content.SharedPreferences
     import android.os.Bundle
     import android.util.Log
-    import androidx.appcompat.widget.SearchView
     import android.view.LayoutInflater
     import android.view.View
     import android.view.ViewGroup
     import android.widget.Button
     import android.widget.TextView
     import androidx.appcompat.app.AppCompatActivity
+    import androidx.appcompat.widget.SearchView
     import androidx.recyclerview.widget.LinearLayoutManager
     import androidx.recyclerview.widget.RecyclerView
     import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -41,6 +41,7 @@
         @SuppressLint("MissingInflatedId")
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
+
             setContentView(R.layout.activity_proyectos)
 
             sharedPreferences = this.getSharedPreferences(PREFS_FILE_NAME, Context.MODE_PRIVATE)
@@ -85,6 +86,13 @@
                 override fun onItemClick(proyecto: Proyecto) {
                     val intent = Intent(this@Proyectos, DatosProyecto::class.java)
                     intent.putExtra("idProyecto", proyecto.id)
+                    intent.putExtra("nombre", proyecto.nombre)
+                    intent.putExtra("descripcion", proyecto.descripcion)
+                    intent.putExtra("supervisor", proyecto.supervisor)
+                    intent.putExtra("estado", proyecto.estado)
+                    intent.putExtra("tiempoDesarrollo", proyecto.tiempoDesarrollo)
+                    intent.putExtra("fechaEntrega", proyecto.fechaEntrega)
+                    intent.putExtra("fechaCreacion", proyecto.fechaCreacion)
                     startActivity(intent)
                 }
             })
@@ -180,7 +188,13 @@
 
         data class Proyecto(
             val id: String,
-            val nombre: String
+            val nombre: String,
+            val descripcion: String,
+            val supervisor: String,
+            val estado: String,
+            val tiempoDesarrollo: String,
+            val fechaEntrega: String,
+            val fechaCreacion: String
         )
 
         companion object {
@@ -215,9 +229,15 @@
                 val proyectoJSON: JSONObject = response.getJSONObject(i)
                 val id = proyectoJSON.getString("idProyecto")
                 val nombre = proyectoJSON.getString("nombreProyecto")
+                val descripcion = proyectoJSON.getString("descripcion")
+                val supervisor = proyectoJSON.getString("supervisor")
+                val estado = proyectoJSON.getString("estado")
+                val tiempoDesarrollo = proyectoJSON.getString("tiempoDesarrollo")
+                val fechaEntrega = proyectoJSON.getString("fechaEntrega")
+                val fechaCreacion = proyectoJSON.getString("fechaCreacion")
                 Log.d("Proyectos", "Proyecto en posición $i - ID: $id, Nombre: $nombre")
 
-                val proyecto = Proyecto(id, nombre)
+                val proyecto = Proyecto(id, nombre, descripcion, supervisor, estado, tiempoDesarrollo, fechaEntrega, fechaCreacion)
                 listaProyectos.add(proyecto)
             }
             // Actualiza la lista filtrada
@@ -227,3 +247,4 @@
             swipeRefreshLayout.isRefreshing = false
         }
     }
+

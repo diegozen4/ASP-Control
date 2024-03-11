@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.InputFilter
 import android.util.Log
@@ -18,16 +17,17 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import com.android.volley.AuthFailureError
-import com.android.volley.toolbox.JsonObjectRequest
-import com.android.volley.toolbox.Volley
 import com.android.volley.Request
 import com.android.volley.RequestQueue
 import com.android.volley.Response
+import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 import com.asp.loginhome.R
 import com.asp.loginhome.inicio.PantallaPrincipal
 import com.asp.loginhome.recursos.BaseApi
@@ -160,7 +160,7 @@ class InicioSesion : AppCompatActivity() {
             if (!siHayInternet()){
                 showErrorDialog("Verifique su conexion a Internet")
             }else {
-                val username = usernameEditText.text.toString()
+                val username = usernameEditText.text.toString().toUpperCase()
                 val password = passwordEditText.text.toString()
 
                 if (username.isNotEmpty() && password.isNotEmpty()) {
@@ -346,6 +346,7 @@ class InicioSesion : AppCompatActivity() {
 
     private fun guardarIdUsuario(idUsuario: String) {
         // El usuario seleccionó guardar la cuenta
+
         editor.putString("guardarCuenta", "true")
             .putString("idUsuario", idUsuario)
             .apply()

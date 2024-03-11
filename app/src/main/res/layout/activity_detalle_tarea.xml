@@ -55,6 +55,7 @@
 
     <!-- Espacio para Chat o Foro Grupal -->
     <androidx.recyclerview.widget.RecyclerView
+
         android:id="@+id/recyclerViewChat"
         android:layout_marginTop="10dp"
         android:layout_width="0dp"
@@ -62,7 +63,9 @@
         app:layout_constraintTop_toBottomOf="@+id/textViewRelacionados"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/layoutChatInput" />
+        app:layout_constraintBottom_toTopOf="@+id/layoutChatInput"
+        app:layoutManager="LinearLayoutManager"
+        app:reverseLayout="true"/>
 
     <!-- Layout para Entrada de Chat -->
     <LinearLayout
@@ -84,7 +87,8 @@
             android:layout_margin="5dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@android:drawable/ic_menu_gallery"
+            android:src="@android:drawable/ic_menu_gallery"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:text=" " />
 
         <EditText
@@ -104,3 +108,4 @@
             android:layout_margin="5dp"/>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
+

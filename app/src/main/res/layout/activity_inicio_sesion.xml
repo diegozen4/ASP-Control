@@ -79,7 +79,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textPassword"
-        tools:ignore="TextSizeCheck" />
+        tools:ignore="HardcodedText,TextSizeCheck" />
 
     <Button
         android:id="@+id/loginButton"
@@ -108,7 +108,8 @@
         android:textSize="25sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView"/>
+        app:layout_constraintTop_toBottomOf="@+id/imageView"
+        tools:ignore="HardcodedText" />
 
     <TextView
         android:id="@+id/textBienvenida"
@@ -122,21 +123,22 @@
         android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textBienvenida1" />
+        app:layout_constraintTop_toBottomOf="@+id/textBienvenida1"
+        tools:ignore="HardcodedText" />
 
     <Button
         android:id="@+id/cambiarUser"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="60dp"
         android:backgroundTint="@color/black"
         android:text="Cambiar de Usuario"
         android:textColor="@color/white"
         android:textSize="12sp"
-        android:layout_marginBottom="60dp"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:ignore="TextSizeCheck" />
+        tools:ignore="HardcodedText,TextSizeCheck" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

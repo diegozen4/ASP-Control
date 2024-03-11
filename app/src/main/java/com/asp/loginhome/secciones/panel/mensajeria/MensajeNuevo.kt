@@ -51,25 +51,6 @@ class MensajeNuevo : AppCompatActivity() {
         // Configura el separador para múltiples destinatarios (en este caso, una coma)
         multiAutoCompleteTextViewTo.setTokenizer(MultiAutoCompleteTextView.CommaTokenizer())
 
-        //agregado recien
-        // Configura el listener de texto para el MultiAutoCompleteTextView
-        multiAutoCompleteTextViewTo.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                // No se utiliza en este caso
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                // No se utiliza en este caso
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-                // Verifica si el texto es lo suficientemente largo antes de cargar la lista de sugerencias
-                if (s != null && s.length >= 1) {
-                    cargarListaUsuarios()
-                }
-            }
-        })
-        //hasta aqui, es prueba para ver el minimo de caracteres para predecir el usuario
 
         // Carga la lista de usuarios al MultiAutoCompleteTextView
         cargarListaUsuarios()

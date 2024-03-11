@@ -1,15 +1,17 @@
 package com.asp.loginhome.secciones.panel.proyectos
 
+import android.annotation.SuppressLint
+import android.app.DatePickerDialog
 import android.os.Bundle
 import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
-import android.widget.DatePicker
 import android.widget.EditText
 import android.widget.MultiAutoCompleteTextView
-import androidx.appcompat.app.AppCompatActivity
+import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.android.volley.Request
 import com.android.volley.RequestQueue
 import com.android.volley.Response
@@ -26,54 +28,103 @@ import java.util.Locale
 
 class CrearProyecto : AppCompatActivity() {
 
-    private lateinit var autoCompleteTextViewProyecto: AutoCompleteTextView
+    private lateinit var autoCompleteTextViewSupervisor: AutoCompleteTextView
     private lateinit var multiAutoCompleteTextViewUsuarios: MultiAutoCompleteTextView
-    private lateinit var editTextNombreTarea: EditText
-    private lateinit var editTextDescripcionTarea: EditText
-    private lateinit var editTextFechaEntrega: DatePicker
-    private lateinit var editTextHoraEntrega: EditText
+    private lateinit var editTextNombreProyecto: EditText
+    private lateinit var editTextDescripcionProyecto: EditText
+    private lateinit var textViewFechaEntrega: TextView
+    private lateinit var textViewCodigoProyecto: TextView
     private lateinit var buttonDesignar: Button
+    private val cal = Calendar.getInstance()
+    private val year = cal.get(Calendar.YEAR)
+    private val month = cal.get(Calendar.MONTH)
+    private val day = cal.get(Calendar.DAY_OF_MONTH)
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_crear_proyecto)
 
         // Inicializa las vistas
-        autoCompleteTextViewProyecto = findViewById(R.id.multiAutoCompleteTextViewSupervisor)
+        autoCompleteTextViewSupervisor = findViewById(R.id.AutoCompleteTextViewSupervisor)
         multiAutoCompleteTextViewUsuarios = findViewById(R.id.multiAutoCompleteTextViewUsuarios)
-        editTextNombreTarea = findViewById(R.id.editTextNombreProyecto)
-        editTextDescripcionTarea = findViewById(R.id.editTextDescripcion)
-        editTextFechaEntrega = findViewById(R.id.datePickerFechaEntrega)
+        editTextNombreProyecto = findViewById(R.id.editTextNombreProyecto)
+        editTextDescripcionProyecto = findViewById(R.id.editTextDescripcion)
+        textViewFechaEntrega = findViewById(R.id.textViewFechaEntrega)
+        textViewCodigoProyecto = findViewById(R.id.textViewCodigoProyecto)
         buttonDesignar = findViewById(R.id.buttonGuardarProyecto)
 
         // Configura el separador para múltiples usuarios (en este caso, una coma)
         multiAutoCompleteTextViewUsuarios.setTokenizer(MultiAutoCompleteTextView.CommaTokenizer())
 
-        // Carga la lista de proyectos al AutoCompleteTextView
-        cargarListaProyectos()
-
         // Carga la lista de usuarios al MultiAutoCompleteTextView
         cargarListaUsuarios()
 
+        // Carga la lista de usuarios al AutoCompleteTextView
+        cargarListaUsuariosSupervisores()
+
         // Configura el listener de clic para el botón "Designar"
         buttonDesignar.setOnClickListener {
-            //designarTarea()
+            crearProyecto()
         }
+
+        textViewFechaEntrega.setOnClickListener {showDatePickerDialog()}
     }
 
-    private fun designarTarea() {
+    private fun showDatePickerDialog() {
+        val currentDate = Calendar.getInstance()
+
+        // Calcula el año máximo permitido (2005, 18 años atrás desde el año actual)
+        val minYear = currentDate.get(Calendar.YEAR)
+
+        val datePickerDialog = DatePickerDialog(
+            this,
+            { _, selectedYear, selectedMonth, selectedDay ->
+                // Crea un objeto Calendar con la fecha seleccionada
+                val selectedDate = Calendar.getInstance()
+                selectedDate.set(selectedYear, selectedMonth, selectedDay)
+
+                Log.d("Fecha Seleccionada: ", selectedDate.toString())
+                Log.d("Fecha Actual: ", currentDate.toString())
+                Log.d("Año Seleccionado: ", selectedYear.toString())
+                Log.d("Año Minimo: ", minYear.toString())
+
+                // Compara con la fecha actual y el año máximo permitido
+                if (selectedYear <= minYear) {
+                    // Si la fecha seleccionada es igual o posterior a la fecha actual y el año
+                    // es más de 18 años atrás desde el año actual, la acepta
+                    val formattedDate = formatDate(selectedDay, selectedMonth, selectedYear)
+                    textViewFechaEntrega.setText(formattedDate)
+                }
+            },
+            year, month, day
+        )
+
+        // Establece la fecha máxima permitida como el año máximo calculado
+        datePickerDialog.datePicker.minDate = currentDate.apply { set(Calendar.YEAR, minYear) }.timeInMillis
+
+        datePickerDialog.show()
+    }
+
+    private fun formatDate(day: Int, month: Int, year: Int): String {
+        val calendar = Calendar.getInstance()
+        calendar.set(year, month, day)
+        val dateFormat = SimpleDateFormat("dd 'de' MMMM 'de' yyyy", Locale.getDefault())
+        return dateFormat.format(calendar.time)
+    }
+
+    private fun crearProyecto() {
         // Obtiene los datos del formulario
-        val proyecto = autoCompleteTextViewProyecto.text.toString().trim()
+        val supervisor = autoCompleteTextViewSupervisor.text.toString().trim()
         val usuarios = multiAutoCompleteTextViewUsuarios.text.toString().trim()
-        val nombreTarea = editTextNombreTarea.text.toString().trim()
-        val descripcionTarea = editTextDescripcionTarea.text.toString().trim()
-       // val fechaEntrega = editTextFechaEntrega.text.toString().trim()
-        val horaEntrega = editTextHoraEntrega.text.toString().trim()
+        val nombreProyecto = editTextNombreProyecto.text.toString().trim()
+        val descripcionProyecto = editTextDescripcionProyecto.text.toString().trim()
+        val fechaEntrega = textViewFechaEntrega.text.toString().trim()
         val fechaCreacion = getCurrentDate()
         val horaCreacion = getCurrentTime()
 
         // Valida que los campos no estén vacíos
-        if (usuarios.isEmpty() || nombreTarea.isEmpty() || descripcionTarea.isEmpty() || horaEntrega.isEmpty()) {
+        if (usuarios.isEmpty() || nombreProyecto.isEmpty() || descripcionProyecto.isEmpty() || fechaEntrega.isEmpty()){
             Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show()
             return
         }
@@ -82,30 +133,31 @@ class CrearProyecto : AppCompatActivity() {
         val usuariosArray = usuarios.split(",").map { it.trim() }
 
         // URL de tu API para designar tareas
-        val url = "https://www.aspcontrol.com.pe/APP/designarTarea.php"
+        val url = "https://www.aspcontrol.com.pe/APP/crearProyecto.php"
 
         // Parámetros a enviar en la solicitud POST
         val params = HashMap<String, String>()
-        params["proyecto"] = proyecto
+        params["supervisor"] = supervisor
         params["usuarios"] = usuariosArray.joinToString(",") // Convierte a una cadena separada por comas
-        params["nombreTarea"] = nombreTarea
-        params["descripcionTarea"] = descripcionTarea
+        params["nombreTarea"] = nombreProyecto
+        params["descripcionTarea"] = descripcionProyecto
         params["fechaCreacion"] = fechaCreacion
-        //params["fechaEntrega"] = fechaEntrega
+        params["fechaEntrega"] = fechaEntrega
         params["horaCreacion"] = horaCreacion
-        params["horaEntrega"] = horaEntrega
+
+        Log.d("Parametros: ", params.toString())
 
         // Configura la solicitud POST
         val requestQueue: RequestQueue = Volley.newRequestQueue(this)
         val stringRequest = object : StringRequest(Request.Method.POST, url,
             Response.Listener<String> { response ->
                 // Manejar la respuesta exitosa
-                Toast.makeText(this, "Tarea designada exitosamente", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Proyecto creado exitosamente", Toast.LENGTH_SHORT).show()
                 // Puedes agregar código para hacer otra acción después de designar la tarea
             },
             Response.ErrorListener { error ->
                 // Manejar errores de la solicitud
-                Toast.makeText(this, "Error al designar la tarea", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Error al crear el Proyecto", Toast.LENGTH_SHORT).show()
                 error.printStackTrace()
             }) {
             override fun getParams(): Map<String, String> {
@@ -117,67 +169,37 @@ class CrearProyecto : AppCompatActivity() {
         requestQueue.add(stringRequest)
     }
 
-    private fun cargarListaProyectos() {
-        // URL de tu API para obtener la lista de proyectos
-        val urlProyectos = "${BaseApi.BaseURL}obtenerProyectos.php"
+    private fun cargarListaUsuariosSupervisores() {
+        // URL de tu API para obtener la lista de usuarios
+        val urlUsuarios = "${BaseApi.BaseURL}obtenerUsuariosSupervisor.php"
 
         val requestQueue: RequestQueue = Volley.newRequestQueue(this)
 
         val jsonArrayRequest = JsonArrayRequest(
-            Request.Method.GET, urlProyectos, null,
+            Request.Method.GET, urlUsuarios, null,
             { response ->
-                // Procesa la respuesta JSON y obtén la lista de proyectos
-                val listaProyectos = obtenerListaProyectos(response)
-                Log.d("CargarListaProyectos", "Lista de proyectos: $listaProyectos")
+                // Procesa la respuesta JSON y obtén la lista de usuarios
+                val listaUsuarios = obtenerListaUsuarios(response)
+                Log.d("CargarListaUsuarios", "Lista de usuarios: $listaUsuarios")
 
-                // Configura un adaptador para el AutoCompleteTextView
-                val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, listaProyectos)
+                // Configura un adaptador para el AutoCompleteTextView del supervisor
+                val adapterSupervisor = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, listaUsuarios)
 
-                // Asocia el adaptador al AutoCompleteTextView de proyectos
-                autoCompleteTextViewProyecto.setAdapter(adapter)
-
+                // Asocia los adaptadores a los respectivos AutoCompleteTextView
+                autoCompleteTextViewSupervisor.setAdapter(adapterSupervisor)
             },
             { error ->
-                Log.e("CargarListaProyectos", "Error al cargar la lista de proyectos: ${error.message}")
+                Log.e("CargarListaUsuarios", "Error al cargar la lista de usuarios: ${error.message}")
 
                 // Manejar errores de la solicitud
-                Toast.makeText(this, "Error al cargar la lista de proyectos", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Error al cargar la lista de usuarios", Toast.LENGTH_SHORT).show()
                 error.printStackTrace()
             }
         )
 
         // Agrega la solicitud a la cola
         requestQueue.add(jsonArrayRequest)
-    }
-
-    private fun obtenerListaProyectos(response: JSONArray): ArrayList<Proyecto> {
-        val listaProyectos = ArrayList<Proyecto>()
-        for (i in 0 until response.length()) {
-            try {
-                val proyectoJSON = response.getJSONObject(i)
-                val nombreProyecto = proyectoJSON.getString("nombreProyecto")
-                val idProyecto = proyectoJSON.getString("idProyecto")
-
-                listaProyectos.add(Proyecto(nombreProyecto, idProyecto))
-            } catch (e: JSONException) {
-                e.printStackTrace()
-                Log.e("ObtenerListaProyectos", "Error al procesar respuesta JSON: ${e.message}")
-
-            }
-        }
-        Log.d("ObtenerListaProyectos", "Lista de proyectos obtenida: $listaProyectos")
-
-        return listaProyectos
-    }
-
-    data class Proyecto(val nombre: String, val id: String) {
-        override fun toString(): String {
-            return "$id $nombre"
-        }
-    }
-
-
-    private fun cargarListaUsuarios() {
+    } private fun cargarListaUsuarios() {
         // URL de tu API para obtener la lista de usuarios
         val urlUsuarios = "${BaseApi.BaseURL}obtenerUsuarios.php"
 
@@ -190,11 +212,11 @@ class CrearProyecto : AppCompatActivity() {
                 val listaUsuarios = obtenerListaUsuarios(response)
                 Log.d("CargarListaUsuarios", "Lista de usuarios: $listaUsuarios")
 
-                // Configura un adaptador para el MultiAutoCompleteTextView
-                val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, listaUsuarios)
+                // Configura un adaptador para el MultiAutoCompleteTextView de usuarios
+                val adapterUsuarios = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, listaUsuarios)
 
-                // Asocia el adaptador al MultiAutoCompleteTextView de usuarios
-                multiAutoCompleteTextViewUsuarios.setAdapter(adapter)
+                // Asocia los adaptadores a los respectivos AutoCompleteTextView
+                multiAutoCompleteTextViewUsuarios.setAdapter(adapterUsuarios)
             },
             { error ->
                 Log.e("CargarListaUsuarios", "Error al cargar la lista de usuarios: ${error.message}")
