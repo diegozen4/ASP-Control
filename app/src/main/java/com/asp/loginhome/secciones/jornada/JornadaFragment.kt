@@ -320,7 +320,7 @@ class JornadaFragment: Fragment(R.layout.fragment_jornada) {
                             }
                                 //verificar permisos de ubicacion para enviar ubicacion
                                 verificarPermisosUbicacion(
-                                    "https://www.aspcontrol.com.pe/APP/insertarUbicacionInicio1.php",
+                                    "https://www.aspcontrol.com.pe/APP/insertarUbicacionInicio.php",
                                     "iniciar"
                                 )
 
@@ -1010,7 +1010,7 @@ class JornadaFragment: Fragment(R.layout.fragment_jornada) {
                                         Toast.makeText(requireContext(), "Ubicación marcada exitosamente", Toast.LENGTH_SHORT).show()
                                     } else {
                                         // La API respondió con un mensaje de error
-                                        Toast.makeText(requireContext(), "Error al marcar la ubicación: $response", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(requireContext(), "al marcar la ubicación: $response", Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 Response.ErrorListener { error ->
