@@ -23,6 +23,7 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -251,15 +252,25 @@ class MisJornadas : AppCompatActivity() {
         pdfDocument.writeTo(FileOutputStream(file))
         pdfDocument.close()
 
-        Toast.makeText(this, "PDF guardado en Descargas: "
-                //+"${file.absolutePath}"
-            , Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "PDF guardado en Descargas: ${file.name}", Toast.LENGTH_LONG).show()
 
-// Abrir el PDF con visor externo
+        // ✅ Abrir con FileProvider
+        val uri = FileProvider.getUriForFile(
+            this,
+            "${applicationContext.packageName}.provider",
+            file
+        )
+
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.setDataAndType(Uri.fromFile(file), "application/pdf")
-        intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
-        startActivity(intent)
+        intent.setDataAndType(uri, "application/pdf")
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "No se encontró una app para abrir PDF", Toast.LENGTH_LONG).show()
+        }
     }
 
     fun obtenerArchivoUnico(baseDir: File, baseName: String, extension: String): File {
