@@ -42,18 +42,34 @@
     <!-- Botón para ordenar jornadas -->
     <Button
         android:id="@+id/btnOrdenarMisJornadas"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="16dp"
         android:backgroundTint="#3F51B5"
         android:layout_marginTop="16dp"
-        android:visibility="invisible"
         android:textSize="14sp"
         android:text="Ordenar por fecha"
         android:textColor="@color/white"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchViewMisJornadas"/>
+        app:layout_constraintEnd_toStartOf="@id/btnExportarReporte"
+        app:layout_constraintTop_toBottomOf="@id/searchViewMisJornadas"
+        app:layout_constraintHorizontal_weight="1"
+        android:layout_marginEnd="8dp"/>
+
+    <!-- Botón para exportar reporte -->
+    <Button
+        android:id="@+id/btnExportarReporte"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#009688"
+        android:layout_marginTop="16dp"
+        android:textSize="14sp"
+        android:text="Export. Reporte"
+        android:textColor="@color/white"
+        app:layout_constraintStart_toEndOf="@id/btnOrdenarMisJornadas"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/searchViewMisJornadas"
+        app:layout_constraintHorizontal_weight="1"
+        android:layout_marginStart="8dp"/>
 
     <!-- SwipeRefreshLayout que envuelve el RecyclerView -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout

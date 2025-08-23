@@ -1,8 +1,17 @@
 package com.asp.loginhome.secciones.cuenta.perfil
 
 import android.annotation.SuppressLint
+import android.app.DatePickerDialog
+import android.app.ProgressDialog
+import android.graphics.Paint
+import java.io.File
+import android.os.Environment
+import java.io.FileOutputStream
 import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
+import android.graphics.pdf.PdfDocument
+import android.icu.util.Calendar
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -10,7 +19,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -30,6 +42,7 @@ class MisJornadas : AppCompatActivity() {
 
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
+    private val usarDataFake = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +55,13 @@ class MisJornadas : AppCompatActivity() {
         recyclerView.adapter = misJornadasAdapter
 
         val idUsuario = intent.getStringExtra("idUsuario")
+
+        val btnExportar = findViewById<Button>(R.id.btnExportarReporte)
+        btnExportar.setOnClickListener {
+            // CA1: Seleccionar rango de fechas
+            seleccionarRangoFechas(idUsuario.toString())
+        }
+
 
         obtenerMisJornadasDesdeServidor(idUsuario.toString())
 
@@ -61,6 +81,196 @@ class MisJornadas : AppCompatActivity() {
  */
     }
 
+    private fun seleccionarRangoFechas(idUsuario: String) {
+        val calendar = Calendar.getInstance()
+
+        // Primero seleccionamos fecha de inicio
+        DatePickerDialog(
+            this,
+            { _, year, month, dayOfMonth ->
+                val fechaInicio = "$dayOfMonth/${month + 1}/$year"
+
+                // Luego fecha de fin
+                DatePickerDialog(
+                    this,
+                    { _, year2, month2, dayOfMonth2 ->
+                        val fechaFin = "$dayOfMonth2/${month2 + 1}/$year2"
+
+                        // Pasamos al popup de formatos (CA2)
+                        mostrarPopupFormato(idUsuario, fechaInicio, fechaFin)
+
+                    },
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH),
+                    calendar.get(Calendar.DAY_OF_MONTH)
+                ).show()
+
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+    private fun mostrarPopupFormato(idUsuario: String, fechaInicio: String, fechaFin: String) {
+        val opciones = arrayOf("PDF", "Excel (.xlsx)")
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Exportar reporte como:")
+        builder.setItems(opciones) { _, which ->
+            when (which) {
+                0 -> exportarReportePDF(idUsuario, fechaInicio, fechaFin)   // PDF
+                1 -> exportarReporteExcel(idUsuario, fechaInicio, fechaFin) // Excel
+            }
+        }
+        builder.show()
+    }
+    private fun exportarReporteExcel(idUsuario: String, fechaInicio: String, fechaFin: String) {
+        Toast.makeText(this, "Funcionalidad de Excel en desarrollo", Toast.LENGTH_SHORT).show()
+    }
+
+
+    @SuppressLint("InflateParams")
+    private fun exportarReportePDF(idUsuario: String, fechaInicio: String, fechaFin: String) {
+        val progressDialog = ProgressDialog(this)
+        progressDialog.setMessage("Generando reporte PDF...")
+        progressDialog.setCancelable(false)
+        progressDialog.show()
+        if (usarDataFake) {
+            val fakeData = """
+            [
+                {"fecha_Jornada":"03/02/2025","id_Jornada":"3","reporte_Jornada":"Reporte 3",
+                 "hora_Inicio":"07:30","hora_Fin":"16:00",
+                 "ubicacion_Inicio":"Chorrillos","ubicacion_Fin":"Surco",
+                 "hora_IniRefri":"12:30","hora_FinRefri":"13:15",
+                 "ubicacion_IniRefri":"Cafetería","ubicacion_FinRefri":"Cafetería",
+                 "total_Horas":"7.5"}
+            ]
+        """.trimIndent()
+            val response = JSONArray(fakeData)
+            recyclerView.postDelayed({
+                progressDialog.dismiss()
+                generarPDF(response,fechaInicio, fechaFin)
+            }, 1000)
+        } else {
+            // Simular llamada a la API para obtener datos
+            // API con rango de fechas
+            val url = "${BaseApi.BaseURL}reporteJornadas.php?idUsuario=$idUsuario&fechaInicio=$fechaInicio&fechaFin=$fechaFin"
+            val requestQueue: RequestQueue = Volley.newRequestQueue(this)
+
+            val jsonArrayRequest = JsonArrayRequest(
+                Request.Method.GET, url, null,
+                { response ->
+                    progressDialog.dismiss()
+                    generarPDF(response, fechaInicio, fechaFin)
+                },
+                { error ->
+                    progressDialog.dismiss()
+                    Toast.makeText(this, "Error al generar reporte", Toast.LENGTH_SHORT).show()
+                }
+            )
+            requestQueue.add(jsonArrayRequest)
+        }
+    }
+    private fun generarPDF(response: JSONArray, fechaInicio: String, fechaFin: String) {
+        val pdfDocument = PdfDocument()
+        val paint = Paint()
+        val titlePaint = Paint()
+
+        // A4 horizontal: ancho = 2010px, alto = 1200px
+        val pageInfo = PdfDocument.PageInfo.Builder(2010, 1200, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+
+        // === Encabezado ===
+        titlePaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        titlePaint.textSize = 48f
+        canvas.drawText("Reporte de Jornadas", 800f, 100f, titlePaint)
+
+        paint.textSize = 24f
+        canvas.drawText("Nombre de la Empresa: Demo S.A.C", 40f, 160f, paint)
+        canvas.drawText("RUC: 12345678901", 40f, 200f, paint)
+        canvas.drawText("Nombre del Trabajador: Juan Pérez", 40f, 240f, paint)
+        canvas.drawText("Documento: DNI 12345678", 40f, 280f, paint)
+        canvas.drawText("Periodo: $fechaInicio - $fechaFin", 40f, 320f, paint)
+
+        // === Cabecera de la tabla ===
+        titlePaint.textSize = 22f
+        var startY = 400f
+        val colY = startY
+
+        // Definir posiciones X para cada columna (más espaciado porque es horizontal)
+        val colX = arrayOf(40f, 300f, 600f, 1000f, 1300f, 1700f)
+
+        canvas.drawText("FECHA", colX[0], colY, titlePaint)
+        canvas.drawText("HORA INICIO", colX[1], colY, titlePaint)
+        canvas.drawText("UBICACIÓN INICIO", colX[2], colY, titlePaint)
+        canvas.drawText("HORA FIN", colX[3], colY, titlePaint)
+        canvas.drawText("UBICACIÓN FIN", colX[4], colY, titlePaint)
+        canvas.drawText("TOTAL HORAS", colX[5], colY, titlePaint)
+
+        // === Filas de jornadas ===
+        var y = startY + 50
+        paint.textSize = 20f
+
+        for (i in 0 until response.length()) {
+            val jornada = response.getJSONObject(i)
+
+            canvas.drawText(jornada.getString("fecha_Jornada"), colX[0], y, paint)
+            canvas.drawText(jornada.getString("hora_Inicio"), colX[1], y, paint)
+            canvas.drawText(jornada.getString("ubicacion_Inicio"), colX[2], y, paint)
+            canvas.drawText(jornada.getString("hora_Fin"), colX[3], y, paint)
+            canvas.drawText(jornada.getString("ubicacion_Fin"), colX[4], y, paint)
+            canvas.drawText(jornada.getString("total_Horas"), colX[5], y, paint)
+
+            y += 40
+        }
+
+        // === Resumen ===
+        y += 80
+        titlePaint.textSize = 26f
+        canvas.drawText("Resumen del Periodo", 40f, y, titlePaint)
+        y += 40
+        paint.textSize = 22f
+        canvas.drawText("Total de horas trabajadas: 0", 40f, y, paint)
+        y += 30
+        canvas.drawText("Promedio de horas trabajadas: 0", 40f, y, paint)
+        y += 30
+        canvas.drawText("Días trabajados: 0", 40f, y, paint)
+
+        pdfDocument.finishPage(page)
+
+        // Guardar en carpeta Descargas
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        if (!downloadsDir.exists()) {
+            downloadsDir.mkdirs()
+        }
+        val fechaInicioSafe = fechaInicio.replace("/", "-")
+        val fechaFinSafe = fechaFin.replace("/", "-")
+
+        val nombreBase = "Reporte de Jornada_${fechaInicioSafe}_${fechaFinSafe}.pdf"
+        val file = obtenerArchivoUnico(downloadsDir, nombreBase,"pdf")
+        pdfDocument.writeTo(FileOutputStream(file))
+        pdfDocument.close()
+
+        Toast.makeText(this, "PDF guardado en Descargas: "
+                //+"${file.absolutePath}"
+            , Toast.LENGTH_LONG).show()
+
+// Abrir el PDF con visor externo
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.setDataAndType(Uri.fromFile(file), "application/pdf")
+        intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
+        startActivity(intent)
+    }
+
+    fun obtenerArchivoUnico(baseDir: File, baseName: String, extension: String): File {
+        var file = File(baseDir, "$baseName.$extension")
+        var index = 1
+        while (file.exists()) {
+            file = File(baseDir, "$baseName($index).$extension")
+            index++
+        }
+        return file
+    }
     class MisJornadasAdapter(
         private val context: Context, // Agrega el contexto como parámetro
         private val listaMisJornadas: List<MiJornada>
