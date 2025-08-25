@@ -1,5 +1,16 @@
+@file:Suppress("DEPRECATION")
+
 package com.asp.loginhome.secciones.cuenta.perfil
 
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.*
+import com.itextpdf.layout.property.TextAlignment
+import com.itextpdf.layout.property.UnitValue
+import com.itextpdf.kernel.pdf.action.PdfAction
+import java.text.SimpleDateFormat
+import java.util.Locale
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.ProgressDialog
@@ -9,8 +20,8 @@ import android.os.Environment
 import java.io.FileOutputStream
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Typeface
-import android.graphics.pdf.PdfDocument
 import android.icu.util.Calendar
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
@@ -33,23 +44,21 @@ import com.android.volley.toolbox.JsonArrayRequest
 import com.android.volley.toolbox.Volley
 import com.asp.loginhome.R
 import com.asp.loginhome.recursos.BaseApi
+import com.itextpdf.kernel.geom.PageSize
 import org.json.JSONArray
 import org.json.JSONObject
-
 class MisJornadas : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var misJornadasAdapter: MisJornadasAdapter
-
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
-
-    private val usarDataFake = true
+    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_mis_jornadas)
 
-
+        sharedPreferences = this.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
         recyclerView = findViewById(R.id.recyclerViewMisJornadas)
         recyclerView.layoutManager = LinearLayoutManager(this)
         misJornadasAdapter = MisJornadasAdapter(this, listaMisJornadas)
@@ -128,147 +137,199 @@ class MisJornadas : AppCompatActivity() {
         Toast.makeText(this, "Funcionalidad de Excel en desarrollo", Toast.LENGTH_SHORT).show()
     }
 
-
     @SuppressLint("InflateParams")
     private fun exportarReportePDF(idUsuario: String, fechaInicio: String, fechaFin: String) {
         val progressDialog = ProgressDialog(this)
         progressDialog.setMessage("Generando reporte PDF...")
         progressDialog.setCancelable(false)
         progressDialog.show()
-        if (usarDataFake) {
-            val fakeData = """
-            [
-                {"fecha_Jornada":"03/02/2025","id_Jornada":"3","reporte_Jornada":"Reporte 3",
-                 "hora_Inicio":"07:30","hora_Fin":"16:00",
-                 "ubicacion_Inicio":"Chorrillos","ubicacion_Fin":"Surco",
-                 "hora_IniRefri":"12:30","hora_FinRefri":"13:15",
-                 "ubicacion_IniRefri":"Cafetería","ubicacion_FinRefri":"Cafetería",
-                 "total_Horas":"7.5"}
-            ]
-        """.trimIndent()
-            val response = JSONArray(fakeData)
-            recyclerView.postDelayed({
-                progressDialog.dismiss()
-                generarPDF(response,fechaInicio, fechaFin)
-            }, 1000)
-        } else {
-            // Simular llamada a la API para obtener datos
-            // API con rango de fechas
-            val url = "${BaseApi.BaseURL}reporteJornadas.php?idUsuario=$idUsuario&fechaInicio=$fechaInicio&fechaFin=$fechaFin"
-            val requestQueue: RequestQueue = Volley.newRequestQueue(this)
 
-            val jsonArrayRequest = JsonArrayRequest(
-                Request.Method.GET, url, null,
-                { response ->
-                    progressDialog.dismiss()
-                    generarPDF(response, fechaInicio, fechaFin)
-                },
-                { error ->
-                    progressDialog.dismiss()
-                    Toast.makeText(this, "Error al generar reporte", Toast.LENGTH_SHORT).show()
-                }
-            )
-            requestQueue.add(jsonArrayRequest)
+        // Convertir fechas a un formato comparable (dd/MM/yyyy → yyyyMMdd)
+        val formato = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+        val inicioDate = formato.parse(fechaInicio)
+        val finDate = formato.parse(fechaFin)
+
+        // Filtrar lista local
+        val jornadasFiltradas = listaMisJornadas.filter { jornada ->
+            val formatoTexto = SimpleDateFormat("dd 'de' MMMM 'de' yyyy", Locale("es", "ES"))
+            val fechaJornada = formatoTexto.parse(jornada.fecha)
+            fechaJornada != null && fechaJornada >= inicioDate && fechaJornada <= finDate
         }
-    }
-    private fun generarPDF(response: JSONArray, fechaInicio: String, fechaFin: String) {
-        val pdfDocument = PdfDocument()
-        val paint = Paint()
-        val titlePaint = Paint()
 
-        // A4 horizontal: ancho = 2010px, alto = 1200px
-        val pageInfo = PdfDocument.PageInfo.Builder(2010, 1200, 1).create()
-        val page = pdfDocument.startPage(pageInfo)
-        val canvas = page.canvas
+        // Convertir a JSONArray para no tocar tu función generarPDF
+        val response = JSONArray()
+        for (jornada in jornadasFiltradas) {
+            val obj = JSONObject().apply {
+                put("fecha_Jornada", jornada.fecha)
+                put("id_Jornada", jornada.idJ)
+                put("reporte_Jornada", jornada.reporteJ)
+                put("hora_Inicio", jornada.horaInicio)
+                put("hora_Fin", jornada.horaFin)
+                put("ubicacion_Inicio", jornada.ubiInicio)
+                put("ubicacion_Fin", jornada.ubiFin)
+                put("hora_IniRefri", jornada.horaIniRef)
+                put("hora_FinRefri", jornada.horaFinRef)
+                put("ubicacion_IniRefri", jornada.ubiIniRef)
+                put("ubicacion_FinRefri", jornada.ubiFinRef)
+                put("total_Horas", "0") // Calcula si lo necesitas
+            }
+            response.put(obj)
+        }
+
+        progressDialog.dismiss()
+        generarPDF(response, fechaInicio, fechaFin)
+    }
+    @SuppressLint("DefaultLocale")
+    private fun generarPDF(response: JSONArray, fechaInicio: String, fechaFin: String) {
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        if (!downloadsDir.exists()) downloadsDir.mkdirs()
+
+        val formatoEntrada = SimpleDateFormat("dd 'de' MMMM 'de' yyyy", Locale("es", "ES"))
+        val formatoSalida = SimpleDateFormat("EEEE dd/MM/yy", Locale("es", "ES"))
+
+        val fechaInicioSafe = fechaInicio.replace("/", "-")
+        val fechaFinSafe = fechaFin.replace("/", "-")
+        val nombreBase = "Reporte_de_Jornada_${fechaInicioSafe}_${fechaFinSafe}.pdf"
+        val file = obtenerArchivoUnico(downloadsDir, nombreBase, "pdf")
+
+        val pdfWriter = PdfWriter(FileOutputStream(file))
+        val pdfDoc = PdfDocument(pdfWriter)
+        val document = Document(pdfDoc, PageSize.A4.rotate())
 
         // === Encabezado ===
-        titlePaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        titlePaint.textSize = 48f
-        canvas.drawText("Reporte de Jornadas", 800f, 100f, titlePaint)
+        document.add(
+            Paragraph("Reporte de Jornadas")
+                .setBold()
+                .setFontSize(20f)
+                .setTextAlignment(TextAlignment.CENTER)
+        )
 
-        paint.textSize = 24f
-        canvas.drawText("Nombre de la Empresa: Demo S.A.C", 40f, 160f, paint)
-        canvas.drawText("RUC: 12345678901", 40f, 200f, paint)
-        canvas.drawText("Nombre del Trabajador: Juan Pérez", 40f, 240f, paint)
-        canvas.drawText("Documento: DNI 12345678", 40f, 280f, paint)
-        canvas.drawText("Periodo: $fechaInicio - $fechaFin", 40f, 320f, paint)
+        val nombre = sharedPreferences.getString("nombre", "") ?: ""
+        val apellidoP = sharedPreferences.getString("apellidoP", "") ?: ""
+        val apellidoM = sharedPreferences.getString("apellidoM", "") ?: ""
 
-        // === Cabecera de la tabla ===
-        titlePaint.textSize = 22f
-        var startY = 400f
-        val colY = startY
+        document.add(Paragraph("Nombre de la Empresa: ASP Control S.A.C"))
+        document.add(Paragraph("RUC: 20508841397"))
+        document.add(Paragraph("Nombre del Trabajador: $nombre $apellidoP $apellidoM"))
+        document.add(Paragraph("Documento: DNI 12345678"))
+        document.add(Paragraph("Periodo: $fechaInicio - $fechaFin"))
+        document.add(Paragraph("\n"))
 
-        // Definir posiciones X para cada columna (más espaciado porque es horizontal)
-        val colX = arrayOf(40f, 300f, 600f, 1000f, 1300f, 1700f)
+        // === Tabla con bordes ===
+        val table = Table(UnitValue.createPercentArray(floatArrayOf(2f, 2f, 3f, 2f, 3f, 2f)))
+        table.setWidth(UnitValue.createPercentValue(100f))
 
-        canvas.drawText("FECHA", colX[0], colY, titlePaint)
-        canvas.drawText("HORA INICIO", colX[1], colY, titlePaint)
-        canvas.drawText("UBICACIÓN INICIO", colX[2], colY, titlePaint)
-        canvas.drawText("HORA FIN", colX[3], colY, titlePaint)
-        canvas.drawText("UBICACIÓN FIN", colX[4], colY, titlePaint)
-        canvas.drawText("TOTAL HORAS", colX[5], colY, titlePaint)
+        val headers = listOf("FECHA", "HORA INICIO", "UBICACIÓN INICIO", "HORA FIN", "UBICACIÓN FIN", "TOTAL HORAS")
+        headers.forEach { h ->
+            table.addHeaderCell(Cell().add(Paragraph(h).setBold()))
+        }
 
-        // === Filas de jornadas ===
-        var y = startY + 50
-        paint.textSize = 20f
+        // === Variables para resumen ===
+        val formatoHora = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+        var totalMinutos = 0
+        var diasTrabajados = 0
 
+        // === Filas dinámicas ===
         for (i in 0 until response.length()) {
             val jornada = response.getJSONObject(i)
 
-            canvas.drawText(jornada.getString("fecha_Jornada"), colX[0], y, paint)
-            canvas.drawText(jornada.getString("hora_Inicio"), colX[1], y, paint)
-            canvas.drawText(jornada.getString("ubicacion_Inicio"), colX[2], y, paint)
-            canvas.drawText(jornada.getString("hora_Fin"), colX[3], y, paint)
-            canvas.drawText(jornada.getString("ubicacion_Fin"), colX[4], y, paint)
-            canvas.drawText(jornada.getString("total_Horas"), colX[5], y, paint)
+            val fechaOriginal = jornada.getString("fecha_Jornada")
+            var fechaFormateada = fechaOriginal
+            val horaInicio = jornada.optString("hora_Inicio", "")
+            val horaFin = jornada.optString("hora_Fin", "")
+            val ubiInicio = jornada.optString("ubicacion_Inicio", "")
+            val ubiFin = jornada.optString("ubicacion_Fin", "")
+            try {
+                val date = formatoEntrada.parse(fechaOriginal)
+                if (date != null) {
+                    fechaFormateada = formatoSalida.format(date)
+                    // Primera letra mayúscula en el día de la semana
+                    fechaFormateada = fechaFormateada.replaceFirstChar { it.uppercase() }
+                }
+            } catch (_: Exception) {}
 
-            y += 40
+            // Calcular horas trabajadas
+            var horasMinTexto = "-"
+            if (horaInicio.isNotEmpty() && horaFin.isNotEmpty()) {
+                try {
+                    val ini = formatoHora.parse(horaInicio)
+                    val fin = formatoHora.parse(horaFin)
+                    if (ini != null && fin != null) {
+                        val diff = fin.time - ini.time
+                        if (diff > 0) {
+                            val horas = (diff / (1000 * 60 * 60)).toInt()
+                            val minutos = ((diff / (1000 * 60)) % 60).toInt()
+                            horasMinTexto = String.format("%02d:%02d", horas, minutos)
+
+                            totalMinutos += (horas * 60) + minutos
+                            diasTrabajados++
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+
+            // === Celdas ===
+            table.addCell(fechaFormateada)
+            table.addCell(horaInicio)
+
+            // Coordenadas Inicio clickeables
+            if (ubiInicio.isNotEmpty()) {
+                val linkInicio = Link(ubiInicio,
+                    PdfAction.createURI("https://maps.google.com/?q=$ubiInicio&layer=c&cbll=$ubiInicio"))
+                table.addCell(Paragraph(linkInicio))
+            } else {
+                table.addCell("-")
+            }
+
+            table.addCell(horaFin)
+
+            // Coordenadas Fin clickeables
+            if (ubiFin.isNotEmpty()) {
+                val linkFin = Link(ubiFin,
+                    PdfAction.createURI("https://maps.google.com/?q=$ubiFin&layer=c&cbll=$ubiFin"))
+                table.addCell(Paragraph(linkFin))
+            } else {
+                table.addCell("-")
+            }
+
+            // Mostrar horas en formato HH:mm
+            table.addCell(horasMinTexto)
         }
+
+        document.add(table)
 
         // === Resumen ===
-        y += 80
-        titlePaint.textSize = 26f
-        canvas.drawText("Resumen del Periodo", 40f, y, titlePaint)
-        y += 40
-        paint.textSize = 22f
-        canvas.drawText("Total de horas trabajadas: 0", 40f, y, paint)
-        y += 30
-        canvas.drawText("Promedio de horas trabajadas: 0", 40f, y, paint)
-        y += 30
-        canvas.drawText("Días trabajados: 0", 40f, y, paint)
-
-        pdfDocument.finishPage(page)
-
-        // Guardar en carpeta Descargas
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        if (!downloadsDir.exists()) {
-            downloadsDir.mkdirs()
+        document.add(Paragraph("\nResumen del Periodo").setBold().setFontSize(14f))
+// Total en HH:mm
+        val totalHorasInt = totalMinutos / 60
+        val totalMinsInt = totalMinutos % 60
+        val totalTexto = String.format("%02d:%02d", totalHorasInt, totalMinsInt)
+        document.add(Paragraph("Total de horas trabajadas: $totalTexto"))
+        // Promedio en HH:mm
+        val promedioTexto = if (diasTrabajados > 0) {
+            val promedioMin = totalMinutos / diasTrabajados
+            val promHorasInt = promedioMin / 60
+            val promMinsInt = promedioMin % 60
+            String.format("%02d:%02d", promHorasInt, promMinsInt)
+        } else {
+            "00:00"
         }
-        val fechaInicioSafe = fechaInicio.replace("/", "-")
-        val fechaFinSafe = fechaFin.replace("/", "-")
+        document.add(Paragraph("Promedio de horas trabajadas: $promedioTexto"))
+        document.add(Paragraph("Días trabajados: $diasTrabajados"))
 
-        val nombreBase = "Reporte de Jornada_${fechaInicioSafe}_${fechaFinSafe}.pdf"
-        val file = obtenerArchivoUnico(downloadsDir, nombreBase,"pdf")
-        pdfDocument.writeTo(FileOutputStream(file))
-        pdfDocument.close()
+        document.close()
 
         Toast.makeText(this, "PDF guardado en Descargas: ${file.name}", Toast.LENGTH_LONG).show()
 
-        // ✅ Abrir con FileProvider
-        val uri = FileProvider.getUriForFile(
-            this,
-            "${applicationContext.packageName}.provider",
-            file
-        )
-
+        // Abrir PDF
+        val uri = FileProvider.getUriForFile(this, "${applicationContext.packageName}.provider", file)
         val intent = Intent(Intent.ACTION_VIEW)
         intent.setDataAndType(uri, "application/pdf")
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-
         try {
             startActivity(intent)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(this, "No se encontró una app para abrir PDF", Toast.LENGTH_LONG).show()
         }
     }
