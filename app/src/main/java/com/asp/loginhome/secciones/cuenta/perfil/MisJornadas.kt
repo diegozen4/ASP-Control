@@ -148,7 +148,7 @@ class MisJornadas : AppCompatActivity() {
         val formato = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
         val inicioDate = formato.parse(fechaInicio)
         val finDate = formato.parse(fechaFin)
-
+        //uso de listaMisJornadas, reutilizacion de la api de jornadas, aplicando filtro de fechas elegidas.
         // Filtrar lista local
         val jornadasFiltradas = listaMisJornadas.filter { jornada ->
             val formatoTexto = SimpleDateFormat("dd 'de' MMMM 'de' yyyy", Locale("es", "ES"))
